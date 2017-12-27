@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	
+  	<artifactId>gimp-auth-server</artifactId>
+	<packaging>jar</packaging>
+	
+	<name>gimp-auth-server</name>
+	<description>授权验证服务</description>
+
+	<parent>
+		<groupId>com.gimplatform</groupId>
+		<artifactId>gimp-pom</artifactId>
+		<version>1.0.2</version>
+		<relativePath>../gimp-pom/pom.xml</relativePath>
+	</parent>
+	
+	<properties>
+  		<kaptcha.version>2.3.2</kaptcha.version>
+	</properties>
+	
+	<dependencies>
+		<!-- 添加spring boot相关支持 begin -->
+		<!-- 使用Spring MVC构建WEB应用，包括RESTful,Tomcat是默认的内嵌容器 -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		
+		<!-- 使用Spring Data Redis和Jedis客户端操作键-值数据存储Redis -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis</artifactId>
+		</dependency>
+	
+		<!-- 添加 oauth2 -->
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-oauth2</artifactId>
+		</dependency>
+		
+		<!-- 取消使用jwt
+		<dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-jwt</artifactId>
+        </dependency> -->
+		
+		<!-- 使用Spring Data jpa -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-jpa</artifactId>
+		</dependency>
+		<!-- 添加spring boot相关支持 end -->
+	
+		<!-- 添加数据库相关支持 begin -->
+		<dependency>
+			<groupId>mysql</groupId>
+			<artifactId>mysql-connector-java</artifactId>
+		</dependency>
+		<dependency>
+		    <groupId>com.oracle</groupId>
+		    <artifactId>ojdbc6</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.alibaba</groupId>
+			<artifactId>druid</artifactId>
+		</dependency>
+		<!-- 添加数据库相关支持 end -->
+	
+		<!-- 添加Eureka的依赖 -->
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-eureka</artifactId>
+		</dependency>
+		
+		<!-- 引入验证码 -->
+		<dependency>  
+		    <groupId>com.github.penggle</groupId>  
+		    <artifactId>kaptcha</artifactId>  
+		    <version>${kaptcha.version}</version>  
+		</dependency>
+		
+		<!-- 引入平台自定义核心模块 -->
+		<dependency>
+			<groupId>com.gimplatform</groupId>
+			<artifactId>gimp-core</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+	</dependencies>
+</project>

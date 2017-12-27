@@ -1,0 +1,90 @@
+server:
+    #程序启动端口
+    port: 8049
+    context-path: /authServer
+    
+# 指定注册中心的地址
+eureka:
+    instance:
+        #为true时，客户端在注册时就会使用自己的ip地址而不是主机名
+        preferIpAddress: true
+    client:
+        serviceUrl:
+            defaultZone: http://gimp-discovery:8047/eureka/
+
+#log4j2路径配置        
+logging:
+    config: classpath:log4j2.xml
+
+spring:
+    application:
+        name: gimp-auth-server
+    datasource:
+        type: com.alibaba.druid.pool.DruidDataSource
+        # mysql配置
+        driverClassName: com.mysql.jdbc.Driver
+        url: jdbc:mysql://127.0.0.1:3306/hssm?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull
+        username: root
+        password: root
+        # oracle配置
+        #driverClassName: oracle.jdbc.driver.OracleDriver
+        #url: jdbc:oracle:thin:@192.168.1.155:1521:orcl  
+        #username: hssm
+        #password: hssm
+        # 初始化大小，最小，最大
+        initialSize: 5
+        minIdle: 5
+        maxActive: 10
+        # 配置获取连接等待超时的时间
+        maxWait: 60000
+        maxPoolPreparedStatementPerConnectionSize: 20
+        # 打开PSCache，并且指定每个连接上PSCache的大小 
+        poolPreparedStatements: true
+        testOnBorrow: false
+        testOnReturn: false
+        testWhileIdle: true
+        # 配置间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒 
+        timeBetweenEvictionRunsMillis: 60000
+        # 配置一个连接在池中最小生存的时间，单位是毫秒 
+        minEvictableIdleTimeMillis: 300000
+        # 配置监控统计拦截的filters，去掉后监控界面sql无法统计，'wall'用于防火墙 
+        filters: stat,wall,slf4j
+        # 通过connectProperties属性来打开mergeSql功能；慢SQL记录
+        connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+        validationQuery: SELECT 1 FROM DUAL
+        # 合并多个DruidDataSource的监控数据
+        useGlobalDataSourceStat: true
+    jpa:
+        # mysql配置
+        database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
+        # oracle配置
+        #database-platform: org.hibernate.dialect.Oracle10gDialect
+        generate-ddl: true
+        hibernate:
+            ddl-auto: update
+            naming-strategy: org.hibernate.cfg.ImprovedNamingStrategy
+        show-sql: true
+    jackson:
+        serialization:
+            indent_output: true
+    redis:
+        host: 127.0.0.1
+        port: 6379
+        database: 0
+        password: 
+        # 连接超时时间（毫秒）
+        timeout: 0
+        pool:
+            # 连接池最大连接数（使用负值表示没有限制）
+            max-active: 10
+            # 连接池中的最大空闲连接
+            max-idle: 8
+            # 连接池中的最小空闲连接
+            min-idle: 0
+            # 连接池最大阻塞等待时间（使用负值表示没有限制）
+            max-wait: -1
+    thymeleaf:
+        cache: false
+    freemarker: 
+        checkTemplateLocation: false
+        

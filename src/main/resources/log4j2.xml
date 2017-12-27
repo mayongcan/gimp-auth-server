@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="info" monitorInterval="60">
+	<Properties>  
+		<Property name="LOG_HOME">../logs</Property>  
+		<Property name="LOG_NAME">gimp-auth-server</Property>  
+    </Properties> 
+    <Appenders>  
+        <Console name="Console" target="SYSTEM_OUT" follow="true">  
+            <PatternLayout>  
+                <pattern>%d [%p] %C{1.} [%t] %m%n</pattern>  
+            </PatternLayout>  
+        </Console>  
+        <RollingFile name="File" fileName="${LOG_HOME}/${LOG_NAME}.log" filePattern="${LOG_HOME}/${LOG_NAME}_%d{yyyy-MM-dd}.log">  
+		    <PatternLayout>  
+                <pattern>%d [%p] %C{1.} [%t] %m%n</pattern>  
+            </PatternLayout>  
+		    <Policies>  
+		        <TimeBasedTriggeringPolicy modulate="true" interval="1"/>  
+		    </Policies>  
+		</RollingFile> 
+    </Appenders>  
+    <Loggers>  
+        <Logger name="org.apache.catalina.util.LifecycleBase" level="error" />  
+        <Logger name="org.apache.coyote.http11.Http11NioProtocol" level="warn" />  
+        <Logger name="org.apache.tomcat.util.net.NioSelectorPool" level="warn" />  
+        <Logger name="org.hibernate.validator.internal.util.Version" level="warn" />  
+        <Logger name="org.springframework" level="warn" />  
+        <Logger name="com.github" level="debug" />  
+        <Root level="info">  
+            <AppenderRef ref="Console" />  
+            <AppenderRef ref="File" /> 
+        </Root>  
+    </Loggers>  
+</Configuration>  
