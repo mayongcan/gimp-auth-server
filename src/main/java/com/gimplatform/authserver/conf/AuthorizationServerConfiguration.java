@@ -24,65 +24,59 @@ import com.gimplatform.authserver.service.AuthUserService;
 /**
  * 认证服务器
  * @author zzd
- *
  */
 @Configuration
 @EnableAuthorizationServer
 class AuthorizationServerConfiguration extends AuthorizationServerConfigurerAdapter {
-	
-	protected final Logger logger =  LoggerFactory.getLogger(this.getClass());
 
-	@Autowired
-	private UserApprovalHandler userApprovalHandler;
+    protected final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-	@Autowired
-	private TokenStore tokenStore;
+    @Autowired
+    private UserApprovalHandler userApprovalHandler;
+
+    @Autowired
+    private TokenStore tokenStore;
 
     @Autowired
     private DataSource dataSource;
 
-//	@Autowired
-//	private JwtAccessTokenConverter accessTokenConverter;
+    // @Autowired
+    // private JwtAccessTokenConverter accessTokenConverter;
 
-	@Autowired
-	@Qualifier("authenticationManagerBean")
+    @Autowired
+    @Qualifier("authenticationManagerBean")
     private AuthenticationManager authenticationManager;
-	
+
     @Autowired
     private AuthUserService authUserService;
 
-
-	@Override
-	public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
-		endpoints.tokenStore(tokenStore)
-				.userApprovalHandler(userApprovalHandler)
-				.authenticationManager(authenticationManager)
-				.userDetailsService(authUserService);
-//				.accessTokenConverter(accessTokenConverter);
-	}
-    
     @Override
-    public void configure(AuthorizationServerSecurityConfigurer oauthServer) throws Exception {
-        oauthServer
-                .tokenKeyAccess("permitAll()");//公开/oauth/token的接口
+    public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+        endpoints.tokenStore(tokenStore).userApprovalHandler(userApprovalHandler).authenticationManager(authenticationManager).userDetailsService(authUserService);
+        // .accessTokenConverter(accessTokenConverter);
     }
 
-	@Override
-	public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
-		logger.info("初始化认证服务客户端...");
-		//设置从数据库中读取clientDetails信息
-		clients.jdbc(dataSource);
-//		clients.inMemory()
-//	        .withClient("gimp_web")			//客户端ID
-//            .authorizedGrantTypes("password", "authorization_code", "refresh_token", "implicit")
-//            .authorities("ROLE_CLIENT", "ROLE_TRUSTED_CLIENT")
-//            .scopes("read", "write", "trust")			//授权用户的操作权限
-//            .secret("gimp_web")							//密码
-//            .accessTokenValiditySeconds(6000)			//token有效期为120秒
-//            .refreshTokenValiditySeconds(7200);			//刷新token有效期为600秒
-	}
-	
-	@Bean
+    @Override
+    public void configure(AuthorizationServerSecurityConfigurer oauthServer) throws Exception {
+        oauthServer.tokenKeyAccess("permitAll()");// 公开/oauth/token的接口
+    }
+
+    @Override
+    public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
+        logger.info("初始化认证服务客户端...");
+        // 设置从数据库中读取clientDetails信息
+        clients.jdbc(dataSource);
+        // clients.inMemory()
+        // .withClient("gimp_web") //客户端ID
+        // .authorizedGrantTypes("password", "authorization_code", "refresh_token", "implicit")
+        // .authorities("ROLE_CLIENT", "ROLE_TRUSTED_CLIENT")
+        // .scopes("read", "write", "trust") //授权用户的操作权限
+        // .secret("gimp_web") //密码
+        // .accessTokenValiditySeconds(6000) //token有效期为120秒
+        // .refreshTokenValiditySeconds(7200); //刷新token有效期为600秒
+    }
+
+    @Bean
     @Primary
     public DefaultTokenServices tokenServices() {
         DefaultTokenServices defaultTokenServices = new DefaultTokenServices();

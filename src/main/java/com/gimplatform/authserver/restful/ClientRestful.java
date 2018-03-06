@@ -29,68 +29,66 @@ import com.gimplatform.core.utils.VersionUtils;
 
 /**
  * 用户相关的Restful接口
- * 
  * @author zzd
- *
  */
 @RestController
 @RequestMapping("client")
 public class ClientRestful {
 
-	protected static final Logger logger = LogManager.getLogger(ClientRestful.class);
+    protected static final Logger logger = LogManager.getLogger(ClientRestful.class);
 
-	@Autowired
-	private ClientVersionService clientVersionService;
+    @Autowired
+    private ClientVersionService clientVersionService;
 
-	/**
-	 * @param request
-	 * @return
-	 */
-	@RequestMapping(value = "/versionUpdate", method = RequestMethod.GET)
-	public JSONObject versionUpdate(HttpServletRequest request, @RequestParam Map<String, Object> params) {
-		JSONObject json = new JSONObject();
-		try {
-			Pageable pageable = new PageRequest(0, 15);
-			ClientVersion ClientVersion = new ClientVersion();
-			ClientVersion.setName(MapUtils.getString(params, "appName"));
-			Page<ClientVersion> list = clientVersionService.getList(pageable, ClientVersion);
-			List<ClientVersion> clientList = list.getContent();
-			if(clientList.size() == 0){
-				return RestfulRetUtils.getRetSuccess(clientList);
-			}
-			List<VersionCode> vrlist = new ArrayList<VersionCode>();
+    /**
+     * @param request
+     * @return
+     */
+    @RequestMapping(value = "/versionUpdate", method = RequestMethod.GET)
+    public JSONObject versionUpdate(HttpServletRequest request, @RequestParam Map<String, Object> params) {
+        JSONObject json = new JSONObject();
+        try {
+            Pageable pageable = new PageRequest(0, 15);
+            ClientVersion ClientVersion = new ClientVersion();
+            ClientVersion.setName(MapUtils.getString(params, "appName"));
+            Page<ClientVersion> list = clientVersionService.getList(pageable, ClientVersion);
+            List<ClientVersion> clientList = list.getContent();
+            if (clientList.size() == 0) {
+                return RestfulRetUtils.getRetSuccess(clientList);
+            }
+            List<VersionCode> vrlist = new ArrayList<VersionCode>();
 
-			for (int i = 0; i < clientList.size(); i++) {
-				ClientVersion tmpClient = (ClientVersion) clientList.get(i);
-				String[] version = tmpClient.getVersion().split("\\.");
-				VersionCode vc = new VersionCode(version[0], version[1], version[2]);
-				vc.setPosition(i);
-				vrlist.add(vc);
+            for (int i = 0; i < clientList.size(); i++) {
+                ClientVersion tmpClient = (ClientVersion) clientList.get(i);
+                String[] version = tmpClient.getVersion().split("\\.");
+                VersionCode vc = new VersionCode(version[0], version[1], version[2]);
+                vc.setPosition(i);
+                vrlist.add(vc);
 
-			}
-			VersionUtils comparator = new VersionUtils();
-			Collections.sort(vrlist, comparator);
-			VersionCode temp = (VersionCode) vrlist.get(vrlist.size() - 1);
-			logger.info("版本信息:" + temp.getVerOne() + "," + temp.getVerTwo() + "," + temp.getVerThree() + temp.getPosition());
+            }
+            VersionUtils comparator = new VersionUtils();
+            Collections.sort(vrlist, comparator);
+            VersionCode temp = (VersionCode) vrlist.get(vrlist.size() - 1);
+            logger.info("版本信息:" + temp.getVerOne() + "," + temp.getVerTwo() + "," + temp.getVerThree() + temp.getPosition());
 
-			ClientVersion tmpClient1 = (ClientVersion) clientList.get(temp.getPosition());
+            ClientVersion tmpClient1 = (ClientVersion) clientList.get(temp.getPosition());
 
-			List<Map<String, Object>> retList = new ArrayList<>();
-			Map<String, Object> map = new HashMap<>();
-			map.put("version", tmpClient1.getVersion());
-			map.put("verDesc", tmpClient1.getVerDesc());
-			map.put("fileSize", tmpClient1.getFileSize());
-			map.put("url", tmpClient1.getUrl());
-			map.put("isOption", tmpClient1.getIsOption());
-			retList.add(map);
+            List<Map<String, Object>> retList = new ArrayList<>();
+            Map<String, Object> map = new HashMap<>();
+            map.put("version", tmpClient1.getVersion());
+            map.put("verDesc", tmpClient1.getVerDesc());
+            map.put("fileSize", tmpClient1.getFileSize());
+            map.put("url", tmpClient1.getUrl());
+            map.put("isOption", tmpClient1.getIsOption());
+            retList.add(map);
 
-			json = RestfulRetUtils.getRetSuccess(retList);
+            json = RestfulRetUtils.getRetSuccess(retList);
 
-		} catch (Exception e) {
-			json = RestfulRetUtils.getErrorMsg("31001", "获取最新版本失败");
-			logger.error(e.getMessage(), e);
-		}
-		return json;
-	}
+        } catch (Exception e) {
+            json = RestfulRetUtils.getErrorMsg("31001", "获取最新版本失败");
+            logger.error(e.getMessage(), e);
+        }
+        return json;
+    }
 
 }

@@ -16,23 +16,21 @@ import com.gimplatform.core.entity.UserInfo;
 import com.gimplatform.core.service.RoleInfoService;
 import com.gimplatform.core.service.UserInfoService;
 
-
 /**
  * 验证用户信息
  * @author zzd
- *
  */
 @Component
 public class AuthUserService implements UserDetailsService {
 
-	private final Logger logger =  LoggerFactory.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-	@Autowired
-	private UserInfoService userInfoService;
+    @Autowired
+    private UserInfoService userInfoService;
 
-	@Autowired
-	private RoleInfoService roleInfoService;
-	
+    @Autowired
+    private RoleInfoService roleInfoService;
+
     /**
      * 根据用户名获取登录用户信息
      * @param username
@@ -41,20 +39,20 @@ public class AuthUserService implements UserDetailsService {
      */
     @Override
     public UserDetails loadUserByUsername(String userCode) throws UsernameNotFoundException {
-    	//获取用户信息
-    	UserInfo userInfo = userInfoService.getByUserCode(userCode);
-        if(userInfo == null){
-        	logger.error("登录用户："+ userCode + "不存在！");
-        	throw new UsernameNotFoundException("登录用户不存在！");
+        // 获取用户信息
+        UserInfo userInfo = userInfoService.getByUserCode(userCode);
+        if (userInfo == null) {
+            logger.error("登录用户：" + userCode + "不存在！");
+            throw new UsernameNotFoundException("登录用户不存在！");
         }
         Collection<SimpleGrantedAuthority> collection = new HashSet<SimpleGrantedAuthority>();
 
         List<String> userRoles = roleInfoService.getRolesNameByUser(userInfo);
-        for(int i = 0; i < userRoles.size(); i++){
+        for (int i = 0; i < userRoles.size(); i++) {
             collection.add(new SimpleGrantedAuthority(userRoles.get(i)));
-        	logger.info("授权用户["+ userCode + "]角色：" + userRoles.get(i));
+            logger.info("授权用户[" + userCode + "]角色：" + userRoles.get(i));
         }
         return new org.springframework.security.core.userdetails.User(userCode, userInfo.getPassword(), collection);
     }
- 
+
 }
