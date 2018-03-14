@@ -50,11 +50,16 @@ public class UserAuthenticationProvider implements AuthenticationProvider {
         UserInfo userInfo = userInfoService.getByUserCode(userCode);
         // 判断当前用户是否被锁
         UserLogon userLogon = userLogonRepository.findByUserId(userInfo.getUserId());
-        if (userLogon == null) {
-            // 创建登录信息表
+        if (userLogon == null || userLogon.getUserId() == null) {
+            // 判断记录是哦福存在，如果不存在，则创建登录信息表
             userLogon = userInfoService.addUserLogon(userInfo, null, null);
         }
         if (DateUtils.isBetweenTwoDate(userLogon.getLockBeginDate(), userLogon.getLockEndDate(), new Date())) {
+            //容错，判断登录次数是否为5次，如果不是，则更新为5次
+            if(userLogon.getFaileCount() < MAX_FAILE_COUNT) {
+                userLogon.setFaileCount(MAX_FAILE_COUNT + 1);
+                userLogonRepository.save(userLogon);
+            }
             throw new UsernameNotFoundException("当前账号已被锁定，请联系管理员！");
         }
 
