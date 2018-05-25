@@ -2,7 +2,9 @@ package com.gimplatform.authserver.component;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.Map;
 
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -36,6 +38,7 @@ public class UserAuthenticationProvider implements AuthenticationProvider {
     @Autowired
     private UserLogonRepository userLogonRepository;
 
+    @SuppressWarnings("unchecked")
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         // 获取登录用户名
@@ -46,12 +49,17 @@ public class UserAuthenticationProvider implements AuthenticationProvider {
         }
         // 获取登录密码
         String password = (String) authentication.getCredentials();
+        boolean widthoutPassword = false;       //是否免密登录（短信验证通过后可登录）
+        if(authentication.getDetails() != null) {
+            Map<String, Object> detailMap = (Map<String, Object>) authentication.getDetails();
+            widthoutPassword = MapUtils.getBooleanValue(detailMap, "widthoutPassword", false);
+        }
 
         UserInfo userInfo = userInfoService.getByUserCode(userCode);
         // 判断当前用户是否被锁
         UserLogon userLogon = userLogonRepository.findByUserId(userInfo.getUserId());
         if (userLogon == null || userLogon.getUserId() == null) {
-            // 判断记录是哦福存在，如果不存在，则创建登录信息表
+            // 判断记录是否存在，如果不存在，则创建登录信息表
             userLogon = userInfoService.addUserLogon(userInfo, null, null);
         }
         if (DateUtils.isBetweenTwoDate(userLogon.getLockBeginDate(), userLogon.getLockEndDate(), new Date())) {
@@ -63,25 +71,29 @@ public class UserAuthenticationProvider implements AuthenticationProvider {
             throw new UsernameNotFoundException("当前账号已被锁定，请联系管理员！");
         }
 
-        // 加密过程在这里体现
-        String md5Password = DigestUtils.md5DigestAsHex(password.getBytes());
-        if (!md5Password.equals(userInfo.getPassword())) {
-            // 更新密码错误次数,如果次数超过5次，则锁定账号，锁定一天
-            int faileCount = userLogon.getFaileCount() + 1;
-            if (faileCount >= MAX_FAILE_COUNT) {
-                userLogon.setFaileCount(userLogon.getFaileCount() + 1);
-                userLogon.setLockBeginDate(new Date());
-                userLogon.setLockEndDate(DateUtils.parseDate(DateUtils.getDate("yyyy-MM-dd") + " 23:59:59"));
-                userLogon.setLockReason("登录密码错误超过限制次数");
-            } else {
-                userLogon.setFaileCount(userLogon.getFaileCount() + 1);
+        //判断是否免密登录，如果是免密登录，则不需要判断密码，直接将数据库里面的密码赋值到变量中
+        if(widthoutPassword) {
+            password = userInfo.getPassword();
+        }else {// 加密过程在这里体现
+            String md5Password = DigestUtils.md5DigestAsHex(password.getBytes());
+            if (!md5Password.equals(userInfo.getPassword())) {
+                // 更新密码错误次数,如果次数超过5次，则锁定账号，锁定一天
+                int faileCount = userLogon.getFaileCount() + 1;
+                if (faileCount >= MAX_FAILE_COUNT) {
+                    userLogon.setFaileCount(userLogon.getFaileCount() + 1);
+                    userLogon.setLockBeginDate(new Date());
+                    userLogon.setLockEndDate(DateUtils.parseDate(DateUtils.getDate("yyyy-MM-dd") + " 23:59:59"));
+                    userLogon.setLockReason("登录密码错误超过限制次数");
+                } else {
+                    userLogon.setFaileCount(userLogon.getFaileCount() + 1);
+                }
+                userLogonRepository.save(userLogon);
+                int time = (MAX_FAILE_COUNT - faileCount);
+                if (time <= 0) {
+                    throw new BadCredentialsException("登录失败次数过多，当前账号已被锁定，请联系管理员！");
+                } else
+                    throw new BadCredentialsException("登录密码错误，你还有" + time + "次尝试机会！");
             }
-            userLogonRepository.save(userLogon);
-            int time = (MAX_FAILE_COUNT - faileCount);
-            if (time <= 0) {
-                throw new BadCredentialsException("登录失败次数过多，当前账号已被锁定，请联系管理员！");
-            } else
-                throw new BadCredentialsException("登录密码错误，你还有" + time + "次尝试机会！");
         }
 
         // 验证密码错误次数

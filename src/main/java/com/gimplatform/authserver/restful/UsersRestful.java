@@ -23,6 +23,7 @@ import com.gimplatform.core.repository.LogInfoRepository;
 import com.gimplatform.core.repository.UserLogonRepository;
 import com.gimplatform.core.service.SmsinfoService;
 import com.gimplatform.core.service.UserInfoService;
+import com.gimplatform.core.utils.BeanUtils;
 import com.gimplatform.core.utils.DateUtils;
 import com.gimplatform.core.utils.RedisUtils;
 import com.gimplatform.core.utils.RestfulRetUtils;
@@ -84,12 +85,15 @@ public class UsersRestful {
                 } else {
                     isInList = true;
                 }
-                // 是否在白名单
+                // 是否在IP白名单
                 if (isInList) {
-                    // 判断用户是否使用了不通的IP登录
+                    // 判断用户是否使用了不同的IP登录
                     if (StringUtils.isNotBlank(userLogon.getLastLogonIp()) && !userLogon.getLastLogonIp().equals(ipAddr)) {
                         logger.warn("用户:" + userInfo.getUserCode() + "上次登录IP:" + userLogon.getLastLogonIp() + ",当前登录IP:" + ipAddr);
                     }
+                    //获取前端的参数
+                    UserLogon tmpUserLogon = (UserLogon) BeanUtils.mapToBean(params, UserLogon.class);
+                    BeanUtils.mergeBean(tmpUserLogon, userLogon);
                     // 写入登录信息
                     userLogon.setFaileCount(0);
                     userLogon.setLockBeginDate(null);
