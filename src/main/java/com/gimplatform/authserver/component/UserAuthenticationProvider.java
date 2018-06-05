@@ -2,9 +2,13 @@ package com.gimplatform.authserver.component;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.collections4.MapUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -12,6 +16,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
@@ -21,11 +26,15 @@ import com.gimplatform.authserver.service.AuthUserService;
 import com.gimplatform.core.entity.UserInfo;
 import com.gimplatform.core.entity.UserLogon;
 import com.gimplatform.core.repository.UserLogonRepository;
+import com.gimplatform.core.service.RoleInfoService;
 import com.gimplatform.core.service.UserInfoService;
 import com.gimplatform.core.utils.DateUtils;
+import com.gimplatform.core.utils.StringUtils;
 
 @Component
 public class UserAuthenticationProvider implements AuthenticationProvider {
+
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private final int MAX_FAILE_COUNT = 5;
 
@@ -38,9 +47,35 @@ public class UserAuthenticationProvider implements AuthenticationProvider {
     @Autowired
     private UserLogonRepository userLogonRepository;
 
+    @Autowired
+    private RoleInfoService roleInfoService;
+
     @SuppressWarnings("unchecked")
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+        boolean widthoutPassword = false;       //是否免密登录（短信验证通过后可登录）
+        String openId = "";
+        if(authentication.getDetails() != null) {
+            Map<String, Object> detailMap = (Map<String, Object>) authentication.getDetails();
+            widthoutPassword = MapUtils.getBooleanValue(detailMap, "widthoutPassword", false);
+            openId = MapUtils.getString(detailMap, "openId", "");
+        }
+        if(StringUtils.isBlank(openId)) return loginNormal(authentication, widthoutPassword);
+        else return loginByOpenId(authentication, openId);
+    }
+
+    @Override
+    public boolean supports(Class<?> authentication) {
+        return authentication.equals(UsernamePasswordAuthenticationToken.class);
+    }
+    
+    /**
+     * 普通的登录
+     * @param authentication
+     * @param widthoutPassword  是否免密登录
+     * @return
+     */
+    private Authentication loginNormal(Authentication authentication, boolean widthoutPassword) {
         // 获取登录用户名
         String userCode = authentication.getName();
         UserDetails loginUser = authUserService.loadUserByUsername(userCode);
@@ -49,11 +84,7 @@ public class UserAuthenticationProvider implements AuthenticationProvider {
         }
         // 获取登录密码
         String password = (String) authentication.getCredentials();
-        boolean widthoutPassword = false;       //是否免密登录（短信验证通过后可登录）
-        if(authentication.getDetails() != null) {
-            Map<String, Object> detailMap = (Map<String, Object>) authentication.getDetails();
-            widthoutPassword = MapUtils.getBooleanValue(detailMap, "widthoutPassword", false);
-        }
+        
 
         UserInfo userInfo = userInfoService.getByUserCode(userCode);
         // 判断当前用户是否被锁
@@ -100,10 +131,42 @@ public class UserAuthenticationProvider implements AuthenticationProvider {
         Collection<? extends GrantedAuthority> authorities = loginUser.getAuthorities();
         return new UsernamePasswordAuthenticationToken(loginUser, password, authorities);
     }
+    
+    /**
+     * 使用openId登录
+     * @param authentication
+     * @param openId
+     * @return
+     */
+    private Authentication loginByOpenId(Authentication authentication, String openId) {
+        // 获取用户信息
+        UserDetails loginUser = loadUserByUsername(openId);
+        // 验证密码错误次数
+        Collection<? extends GrantedAuthority> authorities = loginUser.getAuthorities();
+        return new UsernamePasswordAuthenticationToken(loginUser, loginUser.getPassword(), authorities);
+    }
 
-    @Override
-    public boolean supports(Class<?> authentication) {
-        return authentication.equals(UsernamePasswordAuthenticationToken.class);
+    /**
+     * 加载用户信息
+     * @param openId
+     * @return
+     * @throws UsernameNotFoundException
+     */
+    private UserDetails loadUserByUsername(String openId) throws UsernameNotFoundException {
+        // 获取用户信息
+        UserInfo userInfo = userInfoService.findByOpenId(openId);
+        if (userInfo == null) {
+            logger.error("登录的openId：" + openId + "不存在！");
+            throw new UsernameNotFoundException("第三方登录标识不存在！");
+        }
+        Collection<SimpleGrantedAuthority> collection = new HashSet<SimpleGrantedAuthority>();
+
+        List<String> userRoles = roleInfoService.getRolesNameByUser(userInfo);
+        for (int i = 0; i < userRoles.size(); i++) {
+            collection.add(new SimpleGrantedAuthority(userRoles.get(i)));
+            logger.info("授权用户[" + userInfo.getUserCode() + "]角色：" + userRoles.get(i));
+        }
+        return new org.springframework.security.core.userdetails.User(userInfo.getUserCode(), userInfo.getPassword(), collection);
     }
 
 }

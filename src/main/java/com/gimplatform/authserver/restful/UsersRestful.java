@@ -4,9 +4,7 @@ import java.security.Principal;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-
 import javax.servlet.http.HttpServletRequest;
-
 import org.apache.commons.collections4.MapUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.alibaba.fastjson.JSONObject;
 import com.gimplatform.core.entity.LogInfo;
@@ -336,6 +335,29 @@ public class UsersRestful {
             writeTokenInfo(prefix, access_token, oldToken, refresh_token, expires_in);
         } catch (Exception e) {
             json = RestfulRetUtils.getErrorMsg("31001", "更新授权缓存失败");
+            logger.error(e.getMessage(), e);
+        }
+        return json;
+    }
+    
+    /**
+     * 根据openId查找用户
+     * @param request
+     * @return
+     */
+    @RequestMapping(value = "/findUserIdByOpenId", method = RequestMethod.GET)
+    public JSONObject findUserIdByOpenId(HttpServletRequest request, @RequestParam Map<String, Object> params) {
+        JSONObject json = new JSONObject();
+        try {
+            String openId = MapUtils.getString(params, "openId", "");
+            if(StringUtils.isBlank(openId)) return RestfulRetUtils.getRetSuccess();
+            else {
+                UserInfo userInfo = userInfoService.findByOpenId(openId);
+                if(userInfo == null) return RestfulRetUtils.getRetSuccess();
+                else return RestfulRetUtils.getRetSuccess(userInfo);
+            }
+        } catch (Exception e) {
+            json = RestfulRetUtils.getErrorMsg("51001", "获取列表失败");
             logger.error(e.getMessage(), e);
         }
         return json;
